@@ -391,6 +391,9 @@ static void set_up_environment(void) {
     setenv("DYLD_INSERT_LIBRARIES", getenv("AFL_PRELOAD"), 1);
   }
 
+  if (getenv("OUT_FILE")) {
+      setenv("OUT_FILE", getenv("OUT_FILE"), 1);
+  }
 }
 
 

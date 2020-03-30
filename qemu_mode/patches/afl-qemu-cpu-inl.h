@@ -80,6 +80,8 @@ abi_ulong afl_entry_point, /* ELF entry point (_start) */
 
 static unsigned char afl_fork_child;
 unsigned int afl_forksrv_pid;
+static int out_fd;
+static char *out_file;
 
 /* Instrumentation ratio: */
 
@@ -119,6 +121,13 @@ static void afl_setup(void) {
        *inst_r = getenv("AFL_INST_RATIO");
 
   int shm_id;
+
+  out_file = getenv("OUT_FILE");
+  /* set up the tracer file */
+  if (out_file) {
+    out_fd = open(out_file, O_WRONLY | O_CREAT, 0666);
+    if (out_fd < 0) exit(11);
+  } 
 
   if (inst_r) {
 
@@ -223,6 +232,8 @@ static void afl_forkserver(CPUState *cpu) {
 
     /* Get and relay exit status to parent. */
 
+    if (out_file)
+        close(out_fd);
     if (waitpid(child_pid, &status, 0) < 0) exit(6);
     if (write(FORKSRV_FD + 1, &status, 4) != 4) exit(7);
 
@@ -246,6 +257,10 @@ static inline void afl_maybe_log(abi_ulong cur_loc) {
   /* Looks like QEMU always maps to fixed locations, so ASAN is not a
      concern. Phew. But instruction addresses may be aligned. Let's mangle
      the value to get something quasi-uniform. */
+
+  if (out_file) {
+      write(out_fd, &cur_loc, sizeof(cur_loc));
+  }
 
   cur_loc  = (cur_loc >> 4) ^ (cur_loc << 8);
   cur_loc &= MAP_SIZE - 1;
@@ -309,5 +324,4 @@ static void afl_wait_tsl(CPUState *cpu, int fd) {
   }
 
   close(fd);
-
 }
