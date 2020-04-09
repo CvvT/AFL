@@ -125,7 +125,7 @@ static void afl_setup(void) {
   out_file = getenv("OUT_FILE");
   /* set up the tracer file */
   if (out_file) {
-    out_fd = open(out_file, O_WRONLY | O_CREAT, 0666);
+    out_fd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (out_fd < 0) exit(11);
   } 
 
@@ -232,8 +232,6 @@ static void afl_forkserver(CPUState *cpu) {
 
     /* Get and relay exit status to parent. */
 
-    if (out_file)
-        close(out_fd);
     if (waitpid(child_pid, &status, 0) < 0) exit(6);
     if (write(FORKSRV_FD + 1, &status, 4) != 4) exit(7);
 

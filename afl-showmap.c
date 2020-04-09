@@ -63,6 +63,8 @@ static u8 *out_file,                  /* Trace output file                 */
           *target_path,               /* Path to target binary             */
           *at_file;                   /* Substitution string for @@        */
 
+static u8 *out_trace;                 /* Trace addrs records */
+
 static u32 exec_tmout;                /* Exec timeout (ms)                 */
 
 static u64 mem_limit = MEM_LIMIT;     /* Memory limit (MB)                 */
@@ -391,8 +393,8 @@ static void set_up_environment(void) {
     setenv("DYLD_INSERT_LIBRARIES", getenv("AFL_PRELOAD"), 1);
   }
 
-  if (getenv("OUT_FILE")) {
-      setenv("OUT_FILE", getenv("OUT_FILE"), 1);
+  if (out_trace) {
+      setenv("OUT_FILE", out_trace, 1);
   }
 }
 
@@ -637,9 +639,14 @@ int main(int argc, char** argv) {
 
   doc_path = access(DOC_PATH, F_OK) ? "docs" : DOC_PATH;
 
-  while ((opt = getopt(argc,argv,"+o:m:t:A:eqZQbc")) > 0)
+  while ((opt = getopt(argc,argv,"+O:+o:m:t:A:eqZQbc")) > 0)
 
     switch (opt) {
+
+      case 'O':
+        if (out_trace) FATAL("Multiple -O options not supported");
+        out_trace = optarg;
+        break;
 
       case 'o':
 
